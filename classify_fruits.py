@@ -11,6 +11,18 @@ from keras.layers import Dense, Dropout, Conv2D, MaxPooling2D, Flatten, Activati
 from keras.optimizers import Adamax
 from keras.layers.advanced_activations import LeakyReLU
 from keras import backend as K
+import missinglink
+from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, TensorBoard
+import errno
+
+
+def safe_make_dirs(dir_name):
+    try:
+        os.makedirs(dir_name)
+    except OSError as ex:
+        if ex.errno != errno.EEXIST:
+            raise
+
 
 input_path = './input/fruits-360'
 
@@ -79,6 +91,7 @@ model.add(LeakyReLU(0.5))
 model.add(BatchNormalization())
 model.add(MaxPooling2D(pool_size=(2, 2)))
 
+
 model.add(Conv2D(64, (3, 3), padding='same'))
 model.add(LeakyReLU(0.5))
 model.add(BatchNormalization())
@@ -93,6 +106,19 @@ model.add(Activation("softmax"))
 
 model.summary()
 
+missinglink_callback = missinglink.KerasCallback()
+missinglink_callback.set_properties(display_name='Fruits 360 dataset', description='https://www.kaggle.com/naveenc131/cnn-with-accuracy-of-98 called with GIT LFS support')
+missinglink_callback.set_properties(class_mapping={k: v for k, v in enumerate(np.unique(training_label))}
+)
+
+checkpoint_path = 'weights_epoch-{epoch:02d}_loss-{loss:.4f}.h5'
+tensor_board_path = 'tensorboard'
+if missinglink_callback.rm_active:
+    directory = '/output/checkpoints'
+    safe_make_dirs(directory)
+    checkpoint_path = os.path.join(directory, checkpoint_path)
+    tensor_board_path = os.path.join('/output', tensor_board_path)
+
 model.compile(loss='categorical_crossentropy',
               optimizer=Adamax(),
               metrics=['accuracy'])
@@ -100,11 +126,32 @@ model.compile(loss='categorical_crossentropy',
 model.fit(X_train,
           Y_train,
           batch_size=128,
-          epochs=10,
+          epochs=20,
           verbose=1,
-          validation_data=(X_test, Y_test)
+          validation_data=(X_test, Y_test),
+          callbacks=[
+              ModelCheckpoint(
+                  checkpoint_path,
+                  monitor='val_acc',
+                  verbose=1,
+                  save_best_only=True,
+                  save_weights_only=False,
+                  mode='max',
+                  period=5
+              ),
+              TensorBoard(log_dir=tensor_board_path),
+              missinglink_callback,
+          ]
           )
+print('Training done. Testing.')
+# endregion
+safe_make_dirs('/output/models')
+model_name = 'fruits db'
+model.save('/output/models/{}.h5'.format(model_name))
+model.save_weights('/output/models/{}_weights.h5'.format(model_name))
 
-score = model.evaluate(X_test, Y_test, verbose=0)
+with missinglink_callback.test(model):
+    score = model.evaluate(X_test, Y_test, verbose=0)
+
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])

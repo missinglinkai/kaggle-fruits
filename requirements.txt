@@ -19,3 +19,4 @@ six~=1.11
 tensorflow-gpu~=1.8
 termcolor~=1.1
 Werkzeug~=0.14
+missinglink-sdk

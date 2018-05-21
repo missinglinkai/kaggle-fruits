@@ -1,6 +1,5 @@
 command: bash ./init.sh
 data_use_iterator: false
-env: '{}'
 gpu: true
 image: missinglinkai/tensorflow:nvidia-ec2
 org: missinglinkdemo
