@@ -12,9 +12,11 @@ from keras.optimizers import Adamax
 from keras.layers.advanced_activations import LeakyReLU
 from keras import backend as K
 
+input_path = './input/fruits-360'
+
 training_fruit_img = []
 training_label = []
-for dir_path in glob.glob("../input/*/fruits-360/Training/*"):
+for dir_path in glob.glob(os.path.join(input_path, 'Training', '*')):
     img_label = dir_path.split("/")[-1]
     for image_path in glob.glob(os.path.join(dir_path, "*.jpg")):
         image = cv2.imread(image_path, cv2.IMREAD_COLOR)
@@ -32,7 +34,7 @@ training_label_id = np.array([label_to_id[i] for i in training_label])
 
 validation_fruit_img = []
 validation_label = []
-for dir_path in glob.glob("../input/*/fruits-360/Validation/*"):
+for dir_path in glob.glob(os.path.join(input_path, 'Validation', '*')):
     img_label = dir_path.split("/")[-1]
     for image_path in glob.glob(os.path.join(dir_path, "*.jpg")):
         image = cv2.imread(image_path, cv2.IMREAD_COLOR)
